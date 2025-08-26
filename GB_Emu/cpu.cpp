@@ -200,8 +200,10 @@ void error(uint8_t opcode)
 void emulateCycle() {
     uint8_t opcode = memory[regs.PC++];
 
+
+    std::system("cls");
+    printCPUState();
     std::cout << "Executing opcode 0x" << std::hex << (int)opcode << " at PC=0x" << regs.PC << "\n";
-    void printCPUState();
 
     switch (opcode) {
 
@@ -571,6 +573,62 @@ void emulateCycle() {
     case 0x17: { break; } // rla
     case 0x0F: { break; } // rrca
     case 0x1F: { break; } // rra
+
+
+
+
+
+
+    case 0xC3: // jp u16
+    {
+        uint16_t addr = read16(regs.PC + 1);
+        regs.PC = addr;
+        break;
+    }
+
+    case 0xC2: // jp nz, u16
+    {
+        uint16_t addr = read16(regs.PC + 1);
+        if (!getFlagZero()) regs.PC = addr;
+        else regs.PC += 3;
+        break;
+    }
+
+    case 0xCA: // jp z, u16
+    {
+        uint16_t addr = read16(regs.PC + 1);
+        if (getFlagZero()) regs.PC = addr;
+        else regs.PC += 3;
+        break;
+    }
+
+    case 0xD2: { break; } // jp nc, u16
+    {
+        uint16_t addr = read16(regs.PC + 1);
+        if (!getFlagCarry()) regs.PC = addr;
+        else regs.PC += 3;
+        break;
+    }
+
+    case 0xDA: { break; } // jp c, u16
+    {
+        uint16_t addr = read16(regs.PC + 1);
+        if (getFlagCarry()) regs.PC = addr;
+        else regs.PC += 3;
+        break;
+    }
+
+    case 0xE9: // jp hl
+    {
+        regs.PC = regs.HL();
+        break;
+    }
+
+
+
+
+
+
 
 
 

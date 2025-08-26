@@ -11,3 +11,4 @@ bool loadROM(const std::string& filename);
 uint8_t read8(uint16_t addr);
 void write8(uint16_t addr, uint8_t value);
 void postBootSetup();
+uint16_t read16(uint16_t addr);

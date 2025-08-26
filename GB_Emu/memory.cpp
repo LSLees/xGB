@@ -80,4 +80,12 @@ uint8_t read8(uint16_t addr)
 void write8(uint16_t addr, uint8_t value)
 {
     memory[addr] = value;
+    return;
+}
+
+uint16_t read16(uint16_t addr)
+{
+    uint8_t lo = memory[addr];
+    uint8_t hi = memory[addr + 1];
+    return (hi << 8) | lo;
 }
