@@ -1,5 +1,5 @@
 #pragma once
-#include <cstdint>
+#include "memory.h"
 
 class cpu;
 class memory;
@@ -21,10 +21,10 @@ class cpu
 	uint16_t regPC = 0;
 	uint16_t regSP = 0;
 
-	const uint8_t FLAG_Z = 0x80;
-	const uint8_t FLAG_N = 0x40;
-	const uint8_t FLAG_H = 0x20;
-	const uint8_t FLAG_C = 0x10;
+	const uint8_t flagZ = 0x80;
+	const uint8_t flagN = 0x40;
+	const uint8_t flagH = 0x20;
+	const uint8_t flagC = 0x10;
 
 	uint16_t getAF()
 	{
@@ -71,23 +71,9 @@ class cpu
 	}
 
 	uint8_t tick();
-};
-
-class memory
-{
-	public:
-
-	uint8_t ram[65536] = { 0 };
-
-	uint8_t read(uint16_t address)
-	{
-		return this->ram[address];
-	}
-
-	void write(uint16_t address, uint8_t data)
-	{
-		ram[address] = data;
-	}
+	void setFlag(uint8_t flag, bool set);
+	void inc8(uint8_t* reg);
+	void dec8(uint8_t* reg);
 };
 
 void init();
