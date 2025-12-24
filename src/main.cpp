@@ -4,8 +4,6 @@
 
 int main(int argc, char* argv[])
 {
-    std::cout << "loading...\n";
-
     if (argc < 2)
     {
         std::cerr << "no rom found";
@@ -14,18 +12,25 @@ int main(int argc, char* argv[])
 
     xgb* sys = new xgb();
 
-    if (!sys->loadROM(argv[1]))
+    if (!sys->load(argv[1]))
     {
         std::cerr << "error loading rom";
         delete sys;
         return 1;
     }
 
-    std::cout << "rom loaded";
+    std::cout << "rom loaded\n";
+
+    int i = 0;
+    while (i < 30)
+    {
+        sys->tick();
+        i++;
+    }
 
     while (true)
     {
-        sys->tick();
+
     }
 
     return 0;

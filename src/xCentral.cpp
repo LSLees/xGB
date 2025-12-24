@@ -32,7 +32,9 @@ void cpu::dec8(uint8_t* reg)
 
 uint8_t cpu::tick()
 {
-	uint8_t opcode = this->sys->read(regPC++, true);
+	uint8_t opcode = this->sys->read(regPC++);
+
+	printf("0x%02x\n", opcode);
 
 	switch (opcode)
 	{
@@ -43,8 +45,8 @@ uint8_t cpu::tick()
 
 		case 0x01: // LD BC, u16
 		{
-			uint8_t lo = this->sys->read(regPC++, true);
-			uint8_t hi = this->sys->read(regPC++, true);
+			uint8_t lo = this->sys->read(regPC++);
+			uint8_t hi = this->sys->read(regPC++);
 
 			this->setBC((hi << 8) | lo);
 			return 12;
@@ -52,8 +54,8 @@ uint8_t cpu::tick()
 		
 		case 0x11: // LD DE, u16
 		{
-			uint8_t lo = this->sys->read(regPC++, true);
-			uint8_t hi = this->sys->read(regPC++, true);
+			uint8_t lo = this->sys->read(regPC++);
+			uint8_t hi = this->sys->read(regPC++);
 
 			this->setDE((hi << 8) | lo);
 			return 12;
@@ -61,8 +63,8 @@ uint8_t cpu::tick()
 
 		case 0x21: // LD HL, u16
 		{
-			uint8_t lo = this->sys->read(regPC++, true);
-			uint8_t hi = this->sys->read(regPC++, true);
+			uint8_t lo = this->sys->read(regPC++);
+			uint8_t hi = this->sys->read(regPC++);
 
 			this->setHL((hi << 8) | lo);
 			return 12;
@@ -70,8 +72,8 @@ uint8_t cpu::tick()
 
 		case 0x31: // LD SP, u16
 		{
-			uint8_t lo = this->sys->read(regPC++, true);
-			uint8_t hi = this->sys->read(regPC++, true);
+			uint8_t lo = this->sys->read(regPC++);
+			uint8_t hi = this->sys->read(regPC++);
 
 			this->regSP = ((hi << 8) | lo);
 			return 12;
@@ -188,7 +190,7 @@ uint8_t cpu::tick()
 		case 0x34: // INC (HL)
 		{
 			uint16_t addr = getHL();
-			uint8_t val = this->sys->read(addr, true);
+			uint8_t val = this->sys->read(addr);
 
 			inc8(&val);
 			this->sys->write(addr, val);
@@ -198,7 +200,7 @@ uint8_t cpu::tick()
 		case 0x35: // DEC (HL)
 		{
 			uint16_t addr = getHL();
-			uint8_t val = this->sys->read(addr, true);
+			uint8_t val = this->sys->read(addr);
 
 			dec8(&val);
 			this->sys->write(addr, val);
@@ -543,43 +545,43 @@ uint8_t cpu::tick()
 
 		case 0x46: // LD B, (HL)
 		{
-			this->regB = this->sys->read(this->getHL(), true);
+			this->regB = this->sys->read(this->getHL());
 			return 8;
 		}
 
 		case 0x4e: // LD C, (HL)
 		{
-			this->regC = this->sys->read(this->getHL(), true);
+			this->regC = this->sys->read(this->getHL());
 			return 8;
 		}
 
 		case 0x56: // LD D, (HL)
 		{
-			this->regD = this->sys->read(this->getHL(), true);
+			this->regD = this->sys->read(this->getHL());
 			return 8;
 		}
 
 		case 0x5e: // LD E, (HL)
 		{
-			this->regE = this->sys->read(this->getHL(), true);
+			this->regE = this->sys->read(this->getHL());
 			return 8;
 		}
 
 		case 0x66: // LD H, (HL)
 		{
-			this->regH = this->sys->read(this->getHL(), true);
+			this->regH = this->sys->read(this->getHL());
 			return 8;
 		}
 
 		case 0x6e: // LD L, (HL)
 		{
-			this->regL = this->sys->read(this->getHL(), true);
+			this->regL = this->sys->read(this->getHL());
 			return 8;
 		}
 
 		case 0x7e: // LD A, (HL)
 		{
-			this->regA = this->sys->read(this->getHL(), true);
+			this->regA = this->sys->read(this->getHL());
 			return 8;
 		}
 
@@ -611,70 +613,70 @@ uint8_t cpu::tick()
 
 		case 0x06: // LD B, u8
 		{
-			this->regB = this->sys->read(this->regPC++, true);
+			this->regB = this->sys->read(this->regPC++);
 			return 8;
 		}
 
 		case 0x0e: // LD C, u8
 		{
-			this->regC = this->sys->read(this->regPC++, true);
+			this->regC = this->sys->read(this->regPC++);
 			return 8;
 		}
 
 		case 0x16: // LD D, u8
 		{
-			this->regD = this->sys->read(this->regPC++, true);
+			this->regD = this->sys->read(this->regPC++);
 			return 8;
 		}
 
 		case 0x1e: // LD E, u8
 		{
-			this->regE = this->sys->read(this->regPC++, true);
+			this->regE = this->sys->read(this->regPC++);
 			return 8;
 		}
 
 		case 0x26: // LD H, u8
 		{
-			this->regH = this->sys->read(this->regPC++, true);
+			this->regH = this->sys->read(this->regPC++);
 			return 8;
 		}
 
 		case 0x2e: // LD L, u8
 		{
-			this->regL = this->sys->read(this->regPC++, true);
+			this->regL = this->sys->read(this->regPC++);
 			return 8;
 		}
 
 		case 0x3e: // LD A, u8
 		{
-			this->regA = this->sys->read(this->regPC++, true);
+			this->regA = this->sys->read(this->regPC++);
 			return 8;
 		}
 
 		case 0x36: // LD (HL), u8
 		{
-			this->sys->write(this->getHL(), this->sys->read(this->regPC++, true));
+			this->sys->write(this->getHL(), this->sys->read(this->regPC++));
 			return 12;
 		}
 
 		case 0x2a: // LD A, (HL+)
 		{
-			this->regA = this->sys->read(this->getHL(), true);
+			this->regA = this->sys->read(this->getHL());
 			this->setHL(this->getHL() + 1);
 			return 8;
 		}
 
 		case 0x3a: // LD A, (HL-)
 		{
-			this->regA = this->sys->read(this->getHL(), true);
+			this->regA = this->sys->read(this->getHL());
 			this->setHL(this->getHL() - 1);
 			return 8;
 		}
 
 		case 0xea: // LD (u16), A
 		{
-			uint8_t lo = this->sys->read(this->regPC++, true);
-			uint8_t hi = this->sys->read(this->regPC++, true);
+			uint8_t lo = this->sys->read(this->regPC++);
+			uint8_t hi = this->sys->read(this->regPC++);
 
 			this->sys->write((hi << 8) | lo, this->regA);
 			return 16;
@@ -682,10 +684,10 @@ uint8_t cpu::tick()
 
 		case 0xfa: // LD A, (u16)
 		{
-			uint8_t lo = this->sys->read(this->regPC++, true);
-			uint8_t hi = this->sys->read(this->regPC++, true);
+			uint8_t lo = this->sys->read(this->regPC++);
+			uint8_t hi = this->sys->read(this->regPC++);
 
-			this->regA = this->sys->read((hi << 8) | lo, true);
+			this->regA = this->sys->read((hi << 8) | lo);
 			return 16;
 		}
 
@@ -707,9 +709,74 @@ uint8_t cpu::tick()
 			return 4;
 		}
 
+		case 0xc9: // RET
+		{
+			uint8_t lo = sys->read(this->regSP++);
+			uint8_t hi = sys->read(this->regSP++);
+			this->regPC = (hi << 8) | lo;
+			return 16;
+		}
+
+		case 0xc0: // RET NZ
+		{
+			if (!(this->regF & flagZ))
+			{
+				uint8_t lo = sys->read(this->regSP++);
+				uint8_t hi = sys->read(this->regSP++);
+				this->regPC = (hi << 8) | lo;
+				return 20;
+			}
+			return 8;
+		}
+
+		case 0xc8: // RET Z
+		{
+			if (this->regF & flagZ)
+			{
+				uint8_t lo = sys->read(this->regSP++);
+				uint8_t hi = sys->read(this->regSP++);
+				this->regPC = (hi << 8) | lo;
+				return 20;
+			}
+			return 8;
+		}
+
+		case 0xd0: // RET NC
+		{
+			if (!(this->regF & flagC))
+			{
+				uint8_t lo = sys->read(this->regSP++);
+				uint8_t hi = sys->read(this->regSP++);
+				this->regPC = (hi << 8) | lo;
+				return 20;
+			}
+			return 8;
+		}
+
+		case 0xd8: // RET C
+		{
+			if (this->regF & flagC)
+			{
+				uint8_t lo = sys->read(this->regSP++);
+				uint8_t hi = sys->read(this->regSP++);
+				this->regPC = (hi << 8) | lo;
+				return 20;
+			}
+			return 8;
+		}
+
+		case 0xd9: // RETI
+		{
+			uint8_t lo = sys->read(this->regSP++);
+			uint8_t hi = sys->read(this->regSP++);
+			this->regPC = (hi << 8) | lo;
+			this->ime = true;
+			return 16;
+		}
+
 		default:
 		{
-			std::cout << "invalid opcode\n";
+			std::cout << "^^^^MISSING\n\n";
 			return 0;
 		}
 	}

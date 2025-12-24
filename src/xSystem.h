@@ -13,9 +13,9 @@ public:
 	cpu cpu;
 	memory mem;
 
-	void write(uint16_t addr, uint8_t data);
-	uint8_t read(uint16_t addr, bool readOnly);
-
-	bool loadROM(const char* filename);
+	bool load(const char* filename);
 	void tick();
+
+	void write(uint16_t addr, uint8_t data);
+	uint8_t read(uint16_t addr);
 };

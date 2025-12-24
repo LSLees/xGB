@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="src\xCentral.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\xMem.cpp" />
     <ClCompile Include="src\xPixel.cpp" />
     <ClCompile Include="src\xSystem.cpp" />
   </ItemGroup>

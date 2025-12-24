@@ -10,9 +10,9 @@ xgb::~xgb()
 
 }
 
-bool xgb::loadROM(const char* filename)
+bool xgb::load(const char* filename)
 {
-	return false;
+	return mem.load(filename);
 }
 
 void xgb::write(uint16_t addr, uint8_t data)
@@ -21,10 +21,10 @@ void xgb::write(uint16_t addr, uint8_t data)
 	mem.write(addr, data);
 }
 
-uint8_t xgb::read(uint16_t addr, bool readOnly)
+uint8_t xgb::read(uint16_t addr)
 {
 	// route to ppu apu etc
-	return mem.read(addr);
+	mem.read(addr);
 }
 
 void xgb::tick()
