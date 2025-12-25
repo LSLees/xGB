@@ -7,11 +7,10 @@ class cpu
 {
 public:
 
+	cpu();
+	void reset();
 	void attachSys(xgb*);
 	uint8_t tick();
-	void setFlag(uint8_t flag, bool set);
-	void inc8(uint8_t* reg);
-	void dec8(uint8_t* reg);
 
 private:
 
@@ -77,4 +76,9 @@ private:
 		regH = hl >> 8;
 		regL = hl & 0xff;
 	}
+
+	void setFlag(uint8_t flag, bool set);
+	void inc8(uint8_t* reg);
+	void dec8(uint8_t* reg);
+	void add(uint8_t reg);
 };

@@ -3,6 +3,27 @@
 #include "xSystem.h"
 
 
+cpu::cpu()
+{
+	this->reset();
+}
+
+void cpu::reset()
+{
+	this->regPC = 0x0100;
+	this->regSP = 0xfffe;
+	this->regA = 0x01;
+	this->regF = 0xB0;
+	this->regB = 0x00;
+	this->regC = 0x13;
+	this->regD = 0x00;
+	this->regD = 0x00;
+	this->regE = 0xD8;
+	this->regH = 0x01;
+	this->regL = 0x4D;
+	this->ime = false;
+}
+
 void cpu::attachSys(xgb* s)
 {
 	this->sys = s;
@@ -11,23 +32,36 @@ void cpu::attachSys(xgb* s)
 void cpu::setFlag(uint8_t flag, bool set)
 {
 	if (set) this->regF |= flag;
-	else this->regF &= flag;
+	else this->regF &= flag; // broken
 }
 
 void cpu::inc8(uint8_t* reg)
 {
 	(*reg)++;
-	setFlag(flagZ, *reg == 0);
-	setFlag(flagN, false);
-	setFlag(flagH, (*reg & 0x0f) == 0);
+	uint8_t c = this->regF & flagC;
+	this->regF = c;
+	if (*reg == 0) this->regF |= flagZ;
+	if ((*reg & 0x0F) == 0) this->regF |= flagH;
 }
 
 void cpu::dec8(uint8_t* reg)
 {
 	(*reg)--;
-	setFlag(flagZ, *reg == 0);
-	setFlag(flagN, true);
-	setFlag(flagH, (*reg & 0x0f) == 0x0f);
+	uint8_t c = this->regF & flagC;
+	this->regF = c;
+	this->regF |= flagN;
+	if (*reg == 0) this->regF |= flagZ;
+	if ((*reg & 0x0F) == 0x0F) this->regF |= flagH;
+}
+
+void cpu::add(uint8_t reg)
+{
+	uint16_t sum = this->regA + reg;
+	this->regF = 0;
+	if ((sum & 0xFF) == 0) this->regF |= flagZ;
+	if ((this->regA & 0xF) + (reg & 0xF) > 0xF) this->regF |= flagH;
+	if (sum > 0xFF) this->regF |= flagC;
+	this->regA = (uint8_t)sum;
 }
 
 uint8_t cpu::tick()
@@ -902,15 +936,16 @@ uint8_t cpu::tick()
 
 		case 0x18: // JR i8
 		{
-			this->regPC += (uint8_t)sys->read(this->regPC++);
+			this->regPC += (int8_t)sys->read(this->regPC++);
 			return 12;
 		}
 
 		case 0x20: // JR NZ, i8
 		{
+			int8_t addr = (int8_t)sys->read(this->regPC++);
 			if (!(this->regF & flagZ))
 			{
-				this->regPC += (uint8_t)sys->read(this->regPC++);
+				this->regPC += addr;
 				return 12;
 			}
 			return 8;
@@ -918,9 +953,10 @@ uint8_t cpu::tick()
 
 		case 0x30: // JR NC, i8
 		{
+			int8_t addr = (int8_t)sys->read(this->regPC++);
 			if (!(this->regF & flagC))
 			{
-				this->regPC += (uint8_t)sys->read(this->regPC++);
+				this->regPC += addr;
 				return 12;
 			}
 			return 8;
@@ -928,9 +964,10 @@ uint8_t cpu::tick()
 
 		case 0x28: // JR Z, i8
 		{
+			int8_t addr = (int8_t)sys->read(this->regPC++);
 			if (this->regF & flagZ)
 			{
-				this->regPC += (uint8_t)sys->read(this->regPC++);
+				this->regPC += addr;
 				return 12;
 			}
 			return 8;
@@ -938,9 +975,10 @@ uint8_t cpu::tick()
 
 		case 0x38: // JR C, i8
 		{
+			int8_t addr = (int8_t)sys->read(this->regPC++);
 			if (this->regF & flagC)
 			{
-				this->regPC += (uint8_t)sys->read(this->regPC++);
+				this->regPC += addr;
 				return 12;
 			}
 			return 8;
@@ -949,6 +987,135 @@ uint8_t cpu::tick()
 		case 0xe9: // JP HL
 		{
 			this->regPC = this->getHL();
+			return 4;
+		}
+
+		case 0xcd: // CALL u16
+		{
+			uint8_t lo = sys->read(this->regPC++);
+			uint8_t hi = sys->read(this->regPC++);
+			uint16_t target = (hi << 8) | lo;
+
+			sys->write(--this->regSP, (this->regPC >> 8) & 0xFF);
+			sys->write(--this->regSP, this->regPC & 0xFF);
+
+			this->regPC = target;
+			return 24;
+		}
+
+		case 0xc4: // CALL NZ, u16
+		{
+			uint8_t lo = sys->read(this->regPC++);
+			uint8_t hi = sys->read(this->regPC++);
+			uint16_t target = (hi << 8) | lo;
+
+			if (!(this->regF & flagZ))
+			{
+				sys->write(--this->regSP, (this->regPC >> 8) & 0xFF);
+				sys->write(--this->regSP, this->regPC & 0xFF);
+
+				this->regPC = target;
+				return 24;
+			}
+			return 12;
+		}
+
+		case 0xcc: // CALL Z, u16
+		{
+			uint8_t lo = sys->read(this->regPC++);
+			uint8_t hi = sys->read(this->regPC++);
+			uint16_t target = (hi << 8) | lo;
+
+			if (this->regF & flagZ)
+			{
+				sys->write(--this->regSP, (this->regPC >> 8) & 0xFF);
+				sys->write(--this->regSP, this->regPC & 0xFF);
+
+				this->regPC = target;
+				return 24;
+			}
+			return 12;
+		}
+
+		case 0xd4: // CALL NC, u16
+		{
+			uint8_t lo = sys->read(this->regPC++);
+			uint8_t hi = sys->read(this->regPC++);
+			uint16_t target = (hi << 8) | lo;
+
+			if (!(this->regF & flagC))
+			{
+				sys->write(--this->regSP, (this->regPC >> 8) & 0xFF);
+				sys->write(--this->regSP, this->regPC & 0xFF);
+
+				this->regPC = target;
+				return 24;
+			}
+			return 12;
+		}
+
+		case 0xdc: // CALL C, u16
+		{
+			uint8_t lo = sys->read(this->regPC++);
+			uint8_t hi = sys->read(this->regPC++);
+			uint16_t target = (hi << 8) | lo;
+
+			if (this->regF & flagC)
+			{
+				sys->write(--this->regSP, (this->regPC >> 8) & 0xFF);
+				sys->write(--this->regSP, this->regPC & 0xFF);
+
+				this->regPC = target;
+				return 24;
+			}
+			return 12;
+		}
+
+		case 0x80: // ADD A, B
+		{
+			add(this->regB);
+			return 4;
+		}
+
+		case 0x81: // ADD A, C
+		{
+			add(this->regC);
+			return 4;
+		}
+
+		case 0x82: // ADD A, D
+		{
+			add(this->regD);
+			return 4;
+		}
+
+		case 0x83: // ADD A, E
+		{
+			add(this->regE);
+			return 4;
+		}
+
+		case 0x84: // ADD A, H
+		{
+			add(this->regH);
+			return 4;
+		}
+
+		case 0x85: // ADD A, L
+		{
+			add(this->regL);
+			return 4;
+		}
+
+		case 0x86: // ADD A, (HL)
+		{
+			add(this->sys->read(this->getHL()));
+			return 8;
+		}
+
+		case 0x87: // ADD A, A
+		{
+			add(this->regA);
 			return 4;
 		}
 	}
