@@ -114,7 +114,175 @@ void cpu::rCp(uint8_t reg)
 	if (this->regA < reg) this->regF |= flagC;
 }
 
-uint8_t cpu::tick()
+int cpu::executeCB()
+{
+	uint8_t opcode = this->sys->read(this->regPC++);
+	uint8_t val;
+	int cycles = 8;
+
+	bool writeBack = true;
+
+	bool useHL = (opcode & 0x07) == 0x06;
+
+	if (useHL)
+	{
+		val = this->sys->read(this->getHL());
+		cycles = 16;
+	}
+	else
+	{
+		switch (opcode & 0x07)
+		{
+		case 0: val = this->regB; break;
+		case 1: val = this->regC; break;
+		case 2: val = this->regD; break;
+		case 3: val = this->regE; break;
+		case 4: val = this->regH; break;
+		case 5: val = this->regL; break;
+		case 7: val = this->regA; break;
+		}
+	}
+
+	switch (opcode >> 3)
+	{
+	case 0: // RLC
+	{
+		bool b7 = (val & 0x80) != 0;
+		val = (val << 1) | (b7 ? 1 : 0);
+		this->regF = 0;
+		if (val == 0)this->regF |= flagZ;
+		if (b7)this->regF |= flagC;
+		break;
+	}
+
+	case 1: // RRC
+	{
+		bool b0 = (val & 0x01) != 0;
+		val = (val >> 1) | (b0 ? 0x80 : 0);
+		this->regF = 0;
+		if (val == 0)this->regF |= flagZ;
+		if (b0)this->regF |= flagC;
+		break;
+	}
+
+	case 2: // RL
+	{
+		bool b7 = (val & 0x80) != 0;
+		bool c = (this->regF & flagC) != 0;
+		val = (val << 1) | (c ? 1 : 0);
+		this->regF = 0;
+		if (val == 0)this->regF |= flagZ;
+		if (b7)this->regF |= flagC;
+		break;
+	}
+
+	case 3: // RR
+	{
+		bool b0 = (val & 0x01) != 0;
+		bool c = (this->regF & flagC) != 0;
+		val = (val >> 1) | (c ? 0x80 : 0);
+		this->regF = 0;
+		if (val == 0)this->regF |= flagZ;
+		if (b0)this->regF |= flagC;
+		break;
+	}
+
+	case 4: // SLA
+	{
+		bool b7 = (val & 0x80) != 0;
+		val <<= 1;
+		this->regF = 0;
+		if (val == 0)this->regF |= flagZ;
+		if (b7)this->regF |= flagC;
+		break;
+	}
+
+	case 5: // SRA
+	{
+		bool b0 = (val & 0x01) != 0;
+		bool b7 = (val & 0x80) != 0;
+		val = (val >> 1) | (b7 ? 0x80 : 0);
+		this->regF = 0;
+		if (val == 0)this->regF |= flagZ;
+		if (b0)this->regF |= flagC;
+		break;
+	}
+
+	case 6: // SWAP
+	{
+		uint8_t l = val & 0x0F;
+		uint8_t u = val & 0xF0;
+		val = (l << 4) | (u >> 4);
+		this->regF = 0;
+		if (val == 0)this->regF |= flagZ;
+		break;
+	}
+
+	case 7: // SRL
+	{
+		bool b0 = (val & 0x01) != 0;
+		val >>= 1;
+		this->regF = 0;
+		if (val == 0)this->regF |= flagZ;
+		if (b0)this->regF |= flagC;
+		break;
+	}
+
+	case 8: case 9: case 10: case 11: case 12: case 13: case 14: case 15:
+	{
+		int bit = (opcode >> 3) & 0x07;
+
+		if (!(val & (1 << bit))) this->regF |= flagZ;
+		else this->regF &= ~flagZ;
+
+		this->regF &= ~flagN;
+		this->regF |= flagH;
+
+		writeBack = false;
+
+		if (useHL) cycles = 12;
+		break;
+	}
+
+	case 16: case 17: case 18: case 19: case 20: case 21: case 22: case 23:
+	{
+		int bit = (opcode >> 3) & 0x07;
+		val &= ~(1 << bit);
+		break;
+	}
+
+	case 24: case 25: case 26: case 27: case 28: case 29: case 30: case 31:
+	{
+		int bit = (opcode >> 3) & 0x07;
+		val |= (1 << bit);
+		break;
+	}
+	}
+
+	if (writeBack)
+	{
+		if (useHL)
+		{
+			this->sys->write(this->getHL(), val);
+		}
+		else
+		{
+			switch (opcode & 0x07) {
+			case 0: this->regB = val; break;
+			case 1: this->regC = val; break;
+			case 2: this->regD = val; break;
+			case 3: this->regE = val; break;
+			case 4: this->regH = val; break;
+			case 5: this->regL = val; break;
+			case 7: this->regA = val; break;
+			}
+		}
+	}
+
+	return cycles;
+}
+
+int cpu::tick()
 {
 	uint8_t opcode = this->sys->read(regPC++);
 
@@ -130,6 +298,11 @@ uint8_t cpu::tick()
 		{
 			std::cout << " <- INVALID";
 			return 0;
+		}
+
+		case 0xcb: // CB Prefix
+		{
+			return executeCB();
 		}
 		
 		case 0x00: // NOP
