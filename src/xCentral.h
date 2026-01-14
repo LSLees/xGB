@@ -33,9 +33,6 @@ private:
 	const uint8_t flagH = 0x20;
 	const uint8_t flagC = 0x10;
 
-	int div = 0;
-	int tima = 0;
-
 	uint16_t getAF()
 	{
 		return (regA << 8) | regF;
@@ -91,14 +88,4 @@ private:
 	void rOr(uint8_t reg);
 	void rCp(uint8_t reg);
 	int executeCB();
-	void updateTimer(int cycles)
-	{
-		this->div += cycles;
-		if (this->div >= 256)
-		{
-			this->div = 0;
-			uint8_t current = this->sys->read(0xff04);
-			this->sys->write(0xff04, current + 1);
-		}
-	}
 };

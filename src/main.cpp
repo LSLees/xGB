@@ -26,5 +26,6 @@ int main(int argc, char* argv[])
         sys->tick();
     }
 
+    delete sys;
     return 0;
 }

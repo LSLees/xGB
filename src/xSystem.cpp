@@ -27,12 +27,52 @@ uint8_t xgb::read(uint16_t addr)
 	return mem.read(addr);
 }
 
-void xgb::tick()
+void xgb::updateTimer(int cycles)
 {
-	if (cpu.tick() <= 0)
+	this->div += cycles;
+	if (this->div >= 256)
 	{
-		while (true)
+		this->div = 0;
+		uint8_t current = this->read(0xff04);
+		this->write(0xff04, current + 1);
+	}
+
+	uint8_t tac = this->read(0xff87);
+
+	if (tac & 0x04)
+	{
+		this->tima += cycles;
+		int threshold = 1024;
+		switch (tac & 0x03)
 		{
+		case 0: threshold = 1024; break;
+		case 1: threshold = 16; break;
+		case 2: threshold = 64; break;
+		case 3: threshold = 256; break;
+		}
+
+		while (this->tima >= threshold)
+		{
+			this->tima -= threshold;
+			uint8_t timaT = this->read(0xff05);
+			if (timaT == 0xff)
+			{
+				uint8_t tmaT = this->read(0xff06);
+				this->write(0xff05, tmaT);
+
+				uint8_t flags = this->read(0xff0f);
+				this->write(0xff0f, flags | 0x04);
+			}
+			else
+			{
+				this->write(0xff05, timaT + 1);
+			}
 		}
 	}
+}
+
+void xgb::tick()
+{
+	int cycles = this->cpu.tick();
+	this->updateTimer(cycles);
 }
