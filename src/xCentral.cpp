@@ -22,6 +22,7 @@ void cpu::reset()
 	this->regH = 0x01;
 	this->regL = 0x4D;
 	this->ime = false;
+	this->halted = false;
 }
 
 void cpu::attachSys(xgb* s)
@@ -112,6 +113,45 @@ void cpu::rCp(uint8_t reg)
 	if (this->regA == reg) this->regF |= flagZ;
 	if ((this->regA & 0x0f) < (reg & 0x0f)) this->regF |= flagH;
 	if (this->regA < reg) this->regF |= flagC;
+}
+
+void cpu::handleInterrupts()
+{
+	if (!this->ime) return;
+
+	uint8_t ie = this->sys->read(0xFFFF);
+	uint8_t flags = this->sys->read(0xFF0F);
+	uint8_t fired = ie & flags;
+
+	if (fired > 0)
+	{
+		if (fired & 0x01)
+		{
+			this->serviceInterrupt(0);
+		}
+		else if (fired & 0x02) // STAT
+		{
+			this->serviceInterrupt(1);
+		}
+		else if (fired & 0x04) // Timer
+		{
+			this->serviceInterrupt(2);
+		}
+	}
+}
+
+void cpu::serviceInterrupt(int interruptID)
+{
+	this->ime = false;
+	this->halted = false;
+
+	uint8_t flags = this->sys->read(0xFF0F);
+
+	flags &= ~(1 << interruptID);
+	this->sys->write(0xFF0F, flags);
+	this->sys->write(--this->regSP, (this->regPC >> 8) & 0xff);
+	this->sys->write(--this->regSP, this->regPC & 0xff);
+	this->regPC = 0x0040 + (interruptID * 8);
 }
 
 int cpu::executeCB()
@@ -284,9 +324,12 @@ int cpu::executeCB()
 
 int cpu::tick()
 {
+	handleInterrupts();
+	if (this->halted) return 4;
+
 	uint8_t opcode = this->sys->read(regPC++);
 
-	printf("\n0x%02x", opcode);
+	//printf("\n0x%02x", opcode);
 
 	if (opcode == 0xcb)
 	{
@@ -296,7 +339,8 @@ int cpu::tick()
 	{
 		default:
 		{
-			std::cout << " <- INVALID";
+			std::cout << "  <- INVALID\n";
+			system("pause");
 			return 0;
 		}
 
@@ -451,6 +495,30 @@ int cpu::tick()
 		case 0x33: // INC SP
 		{
 			this->regSP++;
+			return 8;
+		}
+
+		case 0x0b: // DEC BC
+		{
+			this->setBC(this->getBC() - 1);
+			return 8;
+		}
+
+		case 0x1b: // DEC DE
+		{
+			this->setDE(this->getDE() - 1);
+			return 8;
+		}
+
+		case 0x2b: // DEC HL
+		{
+			this->setBC(this->getBC() - 1);
+			return 8;
+		}
+
+		case 0x3b: // DEC SP
+		{
+			this->regSP--;
 			return 8;
 		}
 
@@ -961,6 +1029,7 @@ int cpu::tick()
 		case 0x76: // HALT
 		{
 			std::cout << "halted\n";
+			this->halted = true;
 			return 4;
 		}
 

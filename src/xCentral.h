@@ -1,5 +1,5 @@
 #pragma once
-//#include <cstdint>
+#include <cstdint>
 
 class xgb;
 
@@ -12,10 +12,13 @@ public:
 	void attachSys(xgb*);
 	int tick();
 
+	uint16_t regPC = 0; // temp
+
 private:
 
 	xgb* sys = 0;
 	bool ime = false;
+	bool halted = false;
 
 	uint8_t regA = 0;
 	uint8_t regF = 0;
@@ -25,7 +28,6 @@ private:
 	uint8_t regE = 0;
 	uint8_t regH = 0;
 	uint8_t regL = 0;
-	uint16_t regPC = 0;
 	uint16_t regSP = 0;
 
 	const uint8_t flagZ = 0x80;
@@ -88,4 +90,6 @@ private:
 	void rOr(uint8_t reg);
 	void rCp(uint8_t reg);
 	int executeCB();
+	void handleInterrupts();
+	void serviceInterrupt(int interruptID);
 };

@@ -12,6 +12,7 @@ public:
 
 	cpu cpu;
 	memory mem;
+	ppu ppu;
 
 	bool load(const char* filename);
 	void tick();

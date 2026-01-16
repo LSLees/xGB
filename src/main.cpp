@@ -1,6 +1,7 @@
 #include <iostream>
 #include "xSystem.h"
-
+#include <thread>
+#include <chrono>
 
 int main(int argc, char* argv[])
 {
@@ -24,6 +25,7 @@ int main(int argc, char* argv[])
     while (true)
     {
         sys->tick();
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
 
     delete sys;

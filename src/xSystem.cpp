@@ -1,13 +1,34 @@
 #include "xSystem.h"
+#include "stdio.h"
 
 xgb::xgb()
 {
 	cpu.attachSys(this);
+
+	this->ppu.vram = &this->mem.ram[0x8000];
+	this->ppu.oam = &this->mem.ram[0xFE00];
+	this->ppu.regLCDC = &this->mem.ram[0xFF40];
+	this->ppu.regSTAT = &this->mem.ram[0xFF41];
+	this->ppu.regSCY = &this->mem.ram[0xFF42];
+	this->ppu.regSCX = &this->mem.ram[0xFF43];
+	this->ppu.regLY = &this->mem.ram[0xFF44];
+	this->ppu.regIF = &this->mem.ram[0xFF0F];
 }
 
 xgb::~xgb()
 {
 
+}
+
+void xgb::tick()
+{
+	if (this->cpu.regPC < 0x8000) {
+		printf("PC: %04X | LY: %d\n", this->cpu.regPC, *this->ppu.regLY);
+	}
+
+	int cycles = this->cpu.tick();
+	this->updateTimer(cycles);
+	this->ppu.tick(cycles);
 }
 
 bool xgb::load(const char* filename)
@@ -69,10 +90,4 @@ void xgb::updateTimer(int cycles)
 			}
 		}
 	}
-}
-
-void xgb::tick()
-{
-	int cycles = this->cpu.tick();
-	this->updateTimer(cycles);
 }
